@@ -14,6 +14,7 @@
     .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
     .pill-on { background: rgba(47,209,150,0.12); color: var(--accent); border: 1px solid rgba(47,209,150,0.3); }
     .pill-off { background: rgba(255,107,107,0.1); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .pill-pending { background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
     .back-link { color: var(--muted); font-size: 13px; text-decoration: none; display: inline-block; margin-bottom: 16px; }
     .back-link:hover { color: var(--text); }
     .credentials-box {
@@ -23,9 +24,20 @@
       padding: 14px 16px;
       margin: 18px 0;
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.6;
     }
-    .credentials-box code { color: var(--accent); font-family: 'SF Mono', Consolas, monospace; }
+    .link-box {
+      background: #0e1626;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 12px;
+      color: var(--accent);
+      word-break: break-all;
+      margin-top: 8px;
+      user-select: all;
+    }
   </style>
 </head>
 <body>
@@ -35,8 +47,8 @@
       <div class="brand-mark">RF</div>
       <div class="brand-name">Realidades Financieras<small>Administración de usuarios</small></div>
     </div>
-    <h1>Crear usuario</h1>
-    <p class="subtitle">El usuario recibirá una contraseña temporal y, en su primer inicio de sesión, se le pedirá configurar su propia verificación en dos pasos.</p>
+    <h1>Invitar usuario</h1>
+    <p class="subtitle">Se genera un link único de un solo uso. El usuario lo abre, crea su propia contraseña y configura su verificación en dos pasos. El link expira en 72 horas.</p>
 
     <form method="POST" action="/admin/users">
       <label for="email">Correo del nuevo usuario</label>
@@ -46,28 +58,34 @@
         <div class="error"><%= error %></div>
       <% } %>
 
-      <button type="submit">Crear usuario</button>
+      <button type="submit">Generar invitación</button>
     </form>
 
-    <% if (newUser) { %>
+    <% if (inviteLink) { %>
       <div class="credentials-box">
-        Usuario creado. Compártele estas credenciales por un medio seguro (no por correo abierto):<br/>
-        Correo: <code><%= newUser.email %></code><br/>
-        Contraseña temporal: <code><%= newUser.tempPassword %></code><br/>
-        Se le pedirá configurar 2FA al entrar por primera vez.
+        Invitación creada para <strong><%= inviteLink.email %></strong>. Copia este link y envíaselo por un canal directo (WhatsApp, etc.) — no queda guardado en ningún otro lugar:
+        <div class="link-box"><%= inviteLink.url %></div>
       </div>
     <% } %>
 
     <h1 style="font-size:16px; margin-top:32px;">Usuarios existentes</h1>
     <table>
       <thead>
-        <tr><th>Correo</th><th>2FA</th><th>Rol</th></tr>
+        <tr><th>Correo</th><th>Estado</th><th>Rol</th></tr>
       </thead>
       <tbody>
         <% users.forEach(u => { %>
           <tr>
             <td><%= u.email %></td>
-            <td><span class="pill <%= u.totp_enabled ? 'pill-on' : 'pill-off' %>"><%= u.totp_enabled ? 'Activo' : 'Pendiente' %></span></td>
+            <td>
+              <% if (u.totp_enabled) { %>
+                <span class="pill pill-on">Activo</span>
+              <% } else if (u.invite_token) { %>
+                <span class="pill pill-pending">Invitación pendiente</span>
+              <% } else { %>
+                <span class="pill pill-off">2FA sin configurar</span>
+              <% } %>
+            </td>
             <td><%= u.is_admin ? 'Admin' : 'Usuario' %></td>
           </tr>
         <% }) %>

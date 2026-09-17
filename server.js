@@ -1,4 +1,5 @@
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -10,18 +11,25 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+const INVITE_HOURS_VALID = 72;
+
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,
       totp_secret TEXT,
       totp_enabled BOOLEAN NOT NULL DEFAULT false,
-      is_admin BOOLEAN NOT NULL DEFAULT false
+      is_admin BOOLEAN NOT NULL DEFAULT false,
+      invite_token TEXT,
+      invite_expires TIMESTAMPTZ
     );
   `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_token TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invite_expires TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;`);
 
   const { rows } = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@realidadesfinancieras.com']);
   if (rows.length === 0) {
@@ -30,10 +38,6 @@ async function initDb() {
   } else {
     await pool.query('UPDATE users SET is_admin = true WHERE email = $1', ['admin@realidadesfinancieras.com']);
   }
-}
-
-function generateTempPassword() {
-  return Math.random().toString(36).slice(-5) + Math.random().toString(36).slice(-5).toUpperCase() + '!9';
 }
 
 const app = express();
@@ -71,6 +75,11 @@ async function getUserById(id) {
   return rows[0];
 }
 
+async function listUsers() {
+  const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin, invite_token FROM users ORDER BY id');
+  return rows;
+}
+
 // ---------- LOGIN: paso 1 (password) ----------
 app.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/dashboard');
@@ -81,7 +90,7 @@ app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await getUserByEmail(email);
 
-  if (!user || !bcrypt.compareSync(password || '', user.password_hash)) {
+  if (!user || !user.password_hash || !bcrypt.compareSync(password || '', user.password_hash)) {
     return res.render('login', { error: 'Correo o contraseña incorrectos.' });
   }
 
@@ -116,6 +125,48 @@ app.post('/login/2fa', async (req, res) => {
   delete req.session.pending2faUserId;
   req.session.userId = user.id;
   res.redirect('/dashboard');
+});
+
+// ---------- INVITACIÓN: el usuario nuevo crea su propia contraseña ----------
+app.get('/invite/:token', async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE invite_token = $1 AND invite_expires > now()',
+    [req.params.token]
+  );
+  const user = rows[0];
+  if (!user) {
+    return res.status(400).render('invite-invalid');
+  }
+  res.render('invite-set-password', { email: user.email, token: req.params.token, error: null });
+});
+
+app.post('/invite/:token', async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE invite_token = $1 AND invite_expires > now()',
+    [req.params.token]
+  );
+  const user = rows[0];
+  if (!user) {
+    return res.status(400).render('invite-invalid');
+  }
+
+  const { password, confirm } = req.body;
+  if (!password || password.length < 8) {
+    return res.render('invite-set-password', { email: user.email, token: req.params.token, error: 'La contraseña debe tener al menos 8 caracteres.' });
+  }
+  if (password !== confirm) {
+    return res.render('invite-set-password', { email: user.email, token: req.params.token, error: 'Las contraseñas no coinciden.' });
+  }
+
+  const hash = bcrypt.hashSync(password, 12);
+  await pool.query(
+    'UPDATE users SET password_hash = $1, invite_token = NULL, invite_expires = NULL WHERE id = $2',
+    [hash, user.id]
+  );
+
+  // Después de crear su contraseña, se le fuerza a configurar 2FA antes de entrar
+  req.session.setupUserId = user.id;
+  res.redirect('/setup-2fa');
 });
 
 // ---------- CONFIGURACIÓN OBLIGATORIA DE 2FA (primer login) ----------
@@ -166,31 +217,61 @@ app.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
 });
 
-// ---------- ADMIN: crear y listar usuarios ----------
+// ---------- MI CUENTA: cambiar contraseña ----------
+app.get('/account/password', requireAuth, (req, res) => {
+  res.render('change-password', { error: null, success: false });
+});
+
+app.post('/account/password', requireAuth, async (req, res) => {
+  const user = await getUserById(req.session.userId);
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  if (!user.password_hash || !bcrypt.compareSync(currentPassword || '', user.password_hash)) {
+    return res.render('change-password', { error: 'Tu contraseña actual no es correcta.', success: false });
+  }
+  if (!newPassword || newPassword.length < 8) {
+    return res.render('change-password', { error: 'La nueva contraseña debe tener al menos 8 caracteres.', success: false });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.render('change-password', { error: 'Las contraseñas nuevas no coinciden.', success: false });
+  }
+
+  const hash = bcrypt.hashSync(newPassword, 12);
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
+  res.render('change-password', { error: null, success: true });
+});
+
+// ---------- ADMIN: crear y listar usuarios (por invitación, sin mostrar contraseñas) ----------
 app.get('/admin/users', requireAdmin, async (req, res) => {
-  const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
-  res.render('admin-users', { users: rows, newUser: null, error: null });
+  res.render('admin-users', { users: await listUsers(), inviteLink: null, error: null });
 });
 
 app.post('/admin/users', requireAdmin, async (req, res) => {
   const email = (req.body.email || '').trim().toLowerCase();
-  const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
 
   if (!email) {
-    const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
-    return res.render('admin-users', { users: rows, newUser: null, error: 'El correo es obligatorio.' });
-  }
-  if (existing.length > 0) {
-    const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
-    return res.render('admin-users', { users: rows, newUser: null, error: 'Ya existe un usuario con ese correo.' });
+    return res.render('admin-users', { users: await listUsers(), inviteLink: null, error: 'El correo es obligatorio.' });
   }
 
-  const tempPassword = generateTempPassword();
-  const hash = bcrypt.hashSync(tempPassword, 12);
-  await pool.query('INSERT INTO users (email, password_hash) VALUES ($1, $2)', [email, hash]);
+  const existing = await getUserByEmail(email);
+  const token = crypto.randomBytes(24).toString('hex');
+  const expiresSql = `now() + interval '${INVITE_HOURS_VALID} hours'`;
 
-  const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
-  res.render('admin-users', { users: rows, newUser: { email, tempPassword }, error: null });
+  if (existing) {
+    if (existing.password_hash && existing.totp_enabled) {
+      return res.render('admin-users', { users: await listUsers(), inviteLink: null, error: 'Ya existe un usuario activo con ese correo.' });
+    }
+    // Usuario invitado pero que nunca completó su registro: se le genera un nuevo link
+    await pool.query(`UPDATE users SET invite_token = $1, invite_expires = ${expiresSql} WHERE id = $2`, [token, existing.id]);
+  } else {
+    await pool.query(
+      `INSERT INTO users (email, invite_token, invite_expires) VALUES ($1, $2, ${expiresSql})`,
+      [email, token]
+    );
+  }
+
+  const inviteLink = `${req.protocol}://${req.get('host')}/invite/${token}`;
+  res.render('admin-users', { users: await listUsers(), inviteLink: { email, url: inviteLink }, error: null });
 });
 
 const PORT = process.env.PORT || 3000;
