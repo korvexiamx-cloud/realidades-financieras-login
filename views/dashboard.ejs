@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard · Realidades Financieras</title>
+  <%- include('partials-style') %>
+  <style>
+    body { align-items: flex-start; }
+    .card { max-width: 480px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+    </div>
+    <span class="badge">Sesión verificada · 2FA activo</span>
+    <h1 style="margin-top:12px;">Bienvenido</h1>
+    <p class="subtitle">Entraste con contraseña + verificación en dos pasos, como cuenta protegida: <strong><%= user.email %></strong></p>
+
+    <div class="demo-note">
+      Este es un dashboard de ejemplo. Aquí conectaremos los módulos reales de contabilidad (clientes, movimientos, reportes) una vez que subas la app.
+    </div>
+
+    <form method="POST" action="/logout">
+      <button type="submit" style="background:#223047;color:#e6ebf2;">Cerrar sesión</button>
+    </form>
+  </div>
+</body>
+</html>

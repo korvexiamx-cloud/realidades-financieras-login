@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión · Realidades Financieras</title>
+  <%- include('partials-style') %>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+    </div>
+    <h1>Iniciar sesión</h1>
+    <p class="subtitle">Accede con tu correo y contraseña. Se te pedirá un código de verificación en dos pasos.</p>
+
+    <form method="POST" action="/login">
+      <label for="email">Correo</label>
+      <input type="email" id="email" name="email" required autofocus placeholder="tu@empresa.com" />
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" required placeholder="••••••••" />
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <button type="submit">Continuar</button>
+    </form>
+
+    <div class="demo-note">
+      Demo: <strong>admin@realidadesfinancieras.com</strong> / <strong>Admin123!</strong><br/>
+      Primer inicio de sesión te pedirá configurar la verificación en dos pasos.
+    </div>
+  </div>
+</body>
+</html>

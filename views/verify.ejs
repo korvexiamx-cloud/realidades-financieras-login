@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verificación en dos pasos · Realidades Financieras</title>
+  <%- include('partials-style') %>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+    </div>
+    <h1>Verificación en dos pasos</h1>
+    <p class="subtitle">Abre tu app de autenticación (Google Authenticator / Authy) e ingresa el código de 6 dígitos.</p>
+
+    <form method="POST" action="/login/2fa">
+      <label for="token">Código de verificación</label>
+      <input type="text" id="token" name="token" class="otp-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus placeholder="000000" />
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <button type="submit">Verificar y entrar</button>
+    </form>
+
+    <p class="hint">¿Perdiste acceso a tu app de autenticación? Contacta al administrador del sistema.</p>
+  </div>
+</body>
+</html>

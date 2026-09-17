@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurar 2FA · Realidades Financieras</title>
+  <%- include('partials-style') %>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+    </div>
+    <span class="badge">Paso obligatorio</span>
+    <h1 style="margin-top:12px;">Configura la verificación en dos pasos</h1>
+    <p class="subtitle">Escanea este código QR con Google Authenticator, Authy o similar. No podrás acceder al sistema sin completar este paso.</p>
+
+    <div class="qr-wrap">
+      <img src="<%= qrDataUrl %>" alt="Código QR para configurar 2FA" />
+    </div>
+    <div class="secret-box"><%= secret %></div>
+    <p class="hint" style="margin-top:8px;">¿No puedes escanear? Ingresa esta clave manualmente en tu app.</p>
+
+    <form method="POST" action="/setup-2fa">
+      <label for="token">Código de 6 dígitos de tu app</label>
+      <input type="text" id="token" name="token" class="otp-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus placeholder="000000" />
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <button type="submit">Activar y entrar</button>
+    </form>
+  </div>
+</body>
+</html>

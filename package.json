@@ -1,0 +1,18 @@
+{
+  "name": "realidades-financieras-login",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ejs": "^3.1.10",
+    "express-session": "^1.18.0",
+    "bcryptjs": "^2.4.3",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.3",
+    "better-sqlite3": "^11.3.0"
+  }
+}
