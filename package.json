@@ -12,7 +12,6 @@
     "express-session": "^1.18.0",
     "bcryptjs": "^2.4.3",
     "otplib": "^12.0.1",
-    "qrcode": "^1.5.3",
-    "pg": "^8.13.0"
+    "qrcode": "^1.5.3"
   }
 }

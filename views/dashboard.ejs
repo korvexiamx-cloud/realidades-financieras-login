@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard · Realidades Financieras</title>
+  <title>Panel · Realidades Financieras</title>
   <%- include('partials-style') %>
   <style>
     body { align-items: flex-start; }
@@ -14,25 +14,21 @@
   <div class="card">
     <div class="brand">
       <div class="brand-mark">RF</div>
-      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de control industrial</small></div>
     </div>
     <span class="badge">Sesión verificada · 2FA activo</span>
-    <h1 style="margin-top:12px;">Bienvenido</h1>
-    <p class="subtitle">Entraste con contraseña + verificación en dos pasos, como cuenta protegida: <strong><%= user.email %></strong></p>
+    <h1 style="margin-top:12px;">Bienvenido, <%= user.name %></h1>
+    <p class="subtitle">Ingresaste con contraseña + verificación en dos pasos, como cuenta protegida: <strong><%= user.email %></strong> &middot; Rol: <strong><%= user.role %></strong></p>
 
     <div class="demo-note">
-      Este es un dashboard de ejemplo. Aquí conectaremos los módulos reales de contabilidad (clientes, movimientos, reportes) una vez que subas la app.
+      Este es un panel de ejemplo para la demo. Aquí se conectarán los módulos reales del sistema (clientes, movimientos, reportes) en la versión final.
     </div>
 
-    <a href="/account/password" style="display:block; text-align:center; margin-top:16px; color: var(--muted); font-size: 13px; text-decoration:none;">Cambiar mi contraseña</a>
-
-    <% if (user.is_admin) { %>
-      <a href="/admin/users" style="display:block; text-align:center; margin-top:8px; color: var(--accent); font-size: 13px; text-decoration:none;">Administrar usuarios &rarr;</a>
-    <% } %>
-
     <form method="POST" action="/logout">
-      <button type="submit" style="background:#223047;color:#e6ebf2;">Cerrar sesión</button>
+      <button type="submit" class="secondary">Cerrar sesión</button>
     </form>
+
+    <div class="stripe-footer"></div>
   </div>
 </body>
 </html>

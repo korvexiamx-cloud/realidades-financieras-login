@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Configurar 2FA · Realidades Financieras</title>
+  <title>Configurar 2FA · <%= user.email %></title>
   <%- include('partials-style') %>
 </head>
 <body>
   <div class="card">
     <div class="brand">
       <div class="brand-mark">RF</div>
-      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de control industrial</small></div>
     </div>
-    <span class="badge">Paso obligatorio</span>
-    <h1 style="margin-top:12px;">Configura la verificación en dos pasos</h1>
-    <p class="subtitle">Escanea este código QR con Google Authenticator, Authy o similar. No podrás acceder al sistema sin completar este paso.</p>
+    <span class="badge">Preparación de demo</span>
+    <h1 style="margin-top:12px;">Configurar <%= user.name %></h1>
+    <p class="subtitle">Escanea este código QR con Google Authenticator, Authy o similar para el usuario <strong><%= user.email %></strong>. Solo es necesario hacerlo una vez antes de la demo.</p>
 
     <div class="qr-wrap">
       <img src="<%= qrDataUrl %>" alt="Código QR para configurar 2FA" />
@@ -22,16 +22,10 @@
     <div class="secret-box"><%= secret %></div>
     <p class="hint" style="margin-top:8px;">¿No puedes escanear? Ingresa esta clave manualmente en tu app.</p>
 
-    <form method="POST" action="/setup-2fa">
-      <label for="token">Código de 6 dígitos de tu app</label>
-      <input type="text" id="token" name="token" class="otp-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus placeholder="000000" />
+    <a class="link-muted" href="/setup-2fa">&larr; Volver a la lista de usuarios</a>
+    <a class="link-muted" href="/login">Ir a iniciar sesión</a>
 
-      <% if (error) { %>
-        <div class="error"><%= error %></div>
-      <% } %>
-
-      <button type="submit">Activar y entrar</button>
-    </form>
+    <div class="stripe-footer"></div>
   </div>
 </body>
 </html>

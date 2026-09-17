@@ -10,10 +10,10 @@
   <div class="card">
     <div class="brand">
       <div class="brand-mark">RF</div>
-      <div class="brand-name">Realidades Financieras<small>Sistema de contabilidad</small></div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de control industrial</small></div>
     </div>
     <h1>Verificación en dos pasos</h1>
-    <p class="subtitle">Abre tu app de autenticación (Google Authenticator / Authy) e ingresa el código de 6 dígitos.</p>
+    <p class="subtitle">Abre tu app de autenticación (Google Authenticator / Authy) e ingresa el código de 6 dígitos para <strong><%= email %></strong>.</p>
 
     <form method="POST" action="/login/2fa">
       <label for="token">Código de verificación</label>
@@ -26,7 +26,9 @@
       <button type="submit">Verificar y entrar</button>
     </form>
 
-    <p class="hint">¿Perdiste acceso a tu app de autenticación? Contacta al administrador del sistema.</p>
+    <p class="hint">¿No tienes la app configurada? Ve a <a href="/setup-2fa" style="color:var(--accent);">configuración de 2FA</a>.</p>
+
+    <div class="stripe-footer"></div>
   </div>
 </body>
 </html>

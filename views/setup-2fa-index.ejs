@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurar 2FA · Realidades Financieras</title>
+  <%- include('partials-style') %>
+</head>
+<body>
+  <div class="card" style="max-width: 440px;">
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Sistema de control industrial</small></div>
+    </div>
+    <span class="badge">Preparación de demo</span>
+    <h1 style="margin-top:12px;">Configuración de 2FA</h1>
+    <p class="subtitle">Selecciona un usuario para escanear su código QR con una app autenticadora. Hazlo antes de la demo con clientes; el código quedará listo para usarse.</p>
+
+    <ul class="user-list">
+      <% users.forEach(function(u) { %>
+        <li>
+          <div>
+            <div class="u-email"><%= u.email %></div>
+            <div class="u-role"><%= u.role %></div>
+          </div>
+          <a href="/setup-2fa/<%= u.id %>">Ver QR</a>
+        </li>
+      <% }); %>
+    </ul>
+
+    <a class="link-muted" href="/login">&larr; Volver a iniciar sesión</a>
+
+    <div class="stripe-footer"></div>
+  </div>
+</body>
+</html>

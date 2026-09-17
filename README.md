@@ -1,8 +1,32 @@
-# Realidades Financieras — Login demo con 2FA
+# Realidades Financieras — Demo de Login + 2FA
 
-Demo de login con verificación en dos pasos (TOTP) obligatoria, hecho con Express + SQLite.
+Demo visual (sin base de datos) de un flujo de acceso con **usuario/contraseña**
+y **verificación en dos pasos (TOTP real)**, con diseño estilo industrial,
+lista para presentar a clientes.
 
-## Correr localmente
+## Usuarios de prueba (fijos)
+
+| Correo | Contraseña | Rol |
+|---|---|---|
+| admin@realidadesfinancieras.com | Admin123! | Administrador |
+| gerente@realidadesfinancieras.com | Gerente123! | Gerente |
+| contador@realidadesfinancieras.com | Contador123! | Contabilidad |
+| auditor@realidadesfinancieras.com | Auditor123! | Auditoría |
+| operador@realidadesfinancieras.com | Operador123! | Operaciones |
+
+Cada usuario tiene un secreto TOTP **fijo** (no cambia entre reinicios del
+servidor), por lo que puedes configurar Google Authenticator/Authy con
+anticipación y el código seguirá funcionando el día de la demo.
+
+## Preparar la demo (antes de presentar)
+
+1. Corre el servidor (ver abajo).
+2. Entra a `/setup-2fa`.
+3. Elige un usuario y escanea su QR con Google Authenticator/Authy (o
+   captura el secreto manualmente).
+4. Repite para cada usuario que vayas a usar en la demo.
+
+## Correr en local
 
 ```bash
 npm install
@@ -11,10 +35,11 @@ npm start
 
 Abre `http://localhost:3000/login`.
 
-Usuario demo: `admin@realidadesfinancieras.com` / `Admin123!`
+## Flujo de la demo
 
-## Notas de producción
+1. `/login` — usuario y contraseña.
+2. `/login/2fa` — código de 6 dígitos de la app autenticadora.
+3. `/dashboard` — panel protegido de ejemplo.
 
-- Cambia `SESSION_SECRET` por una variable de entorno real.
-- La base de datos SQLite (`data.sqlite`) es solo para desarrollo; migrar a Postgres antes de tener datos reales de clientes.
-- El usuario demo se crea automáticamente al primer arranque; bórralo o cámbiale la contraseña en producción.
+No hay base de datos ni persistencia: los usuarios están definidos en
+`server.js` para que la demo sea rápida de levantar en cualquier máquina.
