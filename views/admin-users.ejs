@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuarios · Realidades Financieras</title>
+  <%- include('partials-style') %>
+  <style>
+    body { align-items: flex-start; }
+    .card { max-width: 560px; margin: 48px auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .pill-on { background: rgba(47,209,150,0.12); color: var(--accent); border: 1px solid rgba(47,209,150,0.3); }
+    .pill-off { background: rgba(255,107,107,0.1); color: var(--error); border: 1px solid rgba(255,107,107,0.3); }
+    .back-link { color: var(--muted); font-size: 13px; text-decoration: none; display: inline-block; margin-bottom: 16px; }
+    .back-link:hover { color: var(--text); }
+    .credentials-box {
+      background: rgba(47,209,150,0.08);
+      border: 1px solid rgba(47,209,150,0.3);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 18px 0;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .credentials-box code { color: var(--accent); font-family: 'SF Mono', Consolas, monospace; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/dashboard" class="back-link">&larr; Volver al dashboard</a>
+    <div class="brand">
+      <div class="brand-mark">RF</div>
+      <div class="brand-name">Realidades Financieras<small>Administración de usuarios</small></div>
+    </div>
+    <h1>Crear usuario</h1>
+    <p class="subtitle">El usuario recibirá una contraseña temporal y, en su primer inicio de sesión, se le pedirá configurar su propia verificación en dos pasos.</p>
+
+    <form method="POST" action="/admin/users">
+      <label for="email">Correo del nuevo usuario</label>
+      <input type="email" id="email" name="email" required placeholder="usuario@empresa.com" />
+
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <button type="submit">Crear usuario</button>
+    </form>
+
+    <% if (newUser) { %>
+      <div class="credentials-box">
+        Usuario creado. Compártele estas credenciales por un medio seguro (no por correo abierto):<br/>
+        Correo: <code><%= newUser.email %></code><br/>
+        Contraseña temporal: <code><%= newUser.tempPassword %></code><br/>
+        Se le pedirá configurar 2FA al entrar por primera vez.
+      </div>
+    <% } %>
+
+    <h1 style="font-size:16px; margin-top:32px;">Usuarios existentes</h1>
+    <table>
+      <thead>
+        <tr><th>Correo</th><th>2FA</th><th>Rol</th></tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.email %></td>
+            <td><span class="pill <%= u.totp_enabled ? 'pill-on' : 'pill-off' %>"><%= u.totp_enabled ? 'Activo' : 'Pendiente' %></span></td>
+            <td><%= u.is_admin ? 'Admin' : 'Usuario' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

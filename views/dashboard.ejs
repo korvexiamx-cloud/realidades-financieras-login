@@ -24,6 +24,10 @@
       Este es un dashboard de ejemplo. Aquí conectaremos los módulos reales de contabilidad (clientes, movimientos, reportes) una vez que subas la app.
     </div>
 
+    <% if (user.is_admin) { %>
+      <a href="/admin/users" style="display:block; text-align:center; margin-top:16px; color: var(--accent); font-size: 13px; text-decoration:none;">Administrar usuarios &rarr;</a>
+    <% } %>
+
     <form method="POST" action="/logout">
       <button type="submit" style="background:#223047;color:#e6ebf2;">Cerrar sesión</button>
     </form>

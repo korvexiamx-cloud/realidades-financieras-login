@@ -17,15 +17,23 @@ async function initDb() {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       totp_secret TEXT,
-      totp_enabled BOOLEAN NOT NULL DEFAULT false
+      totp_enabled BOOLEAN NOT NULL DEFAULT false,
+      is_admin BOOLEAN NOT NULL DEFAULT false
     );
   `);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;`);
 
   const { rows } = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@realidadesfinancieras.com']);
   if (rows.length === 0) {
     const hash = bcrypt.hashSync('Admin123!', 12);
-    await pool.query('INSERT INTO users (email, password_hash) VALUES ($1, $2)', ['admin@realidadesfinancieras.com', hash]);
+    await pool.query('INSERT INTO users (email, password_hash, is_admin) VALUES ($1, $2, true)', ['admin@realidadesfinancieras.com', hash]);
+  } else {
+    await pool.query('UPDATE users SET is_admin = true WHERE email = $1', ['admin@realidadesfinancieras.com']);
   }
+}
+
+function generateTempPassword() {
+  return Math.random().toString(36).slice(-5) + Math.random().toString(36).slice(-5).toUpperCase() + '!9';
 }
 
 const app = express();
@@ -43,6 +51,14 @@ app.use(session({
 function requireAuth(req, res, next) {
   if (req.session.userId) return next();
   res.redirect('/login');
+}
+
+async function requireAdmin(req, res, next) {
+  if (!req.session.userId) return res.redirect('/login');
+  const user = await getUserById(req.session.userId);
+  if (!user || !user.is_admin) return res.status(403).send('No tienes permisos para ver esta página.');
+  req.currentUser = user;
+  next();
 }
 
 async function getUserByEmail(email) {
@@ -148,6 +164,33 @@ app.get('/dashboard', requireAuth, async (req, res) => {
 
 app.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/login'));
+});
+
+// ---------- ADMIN: crear y listar usuarios ----------
+app.get('/admin/users', requireAdmin, async (req, res) => {
+  const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
+  res.render('admin-users', { users: rows, newUser: null, error: null });
+});
+
+app.post('/admin/users', requireAdmin, async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+
+  if (!email) {
+    const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
+    return res.render('admin-users', { users: rows, newUser: null, error: 'El correo es obligatorio.' });
+  }
+  if (existing.length > 0) {
+    const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
+    return res.render('admin-users', { users: rows, newUser: null, error: 'Ya existe un usuario con ese correo.' });
+  }
+
+  const tempPassword = generateTempPassword();
+  const hash = bcrypt.hashSync(tempPassword, 12);
+  await pool.query('INSERT INTO users (email, password_hash) VALUES ($1, $2)', [email, hash]);
+
+  const { rows } = await pool.query('SELECT id, email, totp_enabled, is_admin FROM users ORDER BY id');
+  res.render('admin-users', { users: rows, newUser: { email, tempPassword }, error: null });
 });
 
 const PORT = process.env.PORT || 3000;
